@@ -415,7 +415,7 @@ function setPremium(premium) {
 }
 
 btnLogin.addEventListener('click', () => {
-  window.open('http://localhost:3000/auth/patreon', 'Patreon Auth', 'width=600,height=700');
+  window.open('https://nightcore-maker-bbc8.onrender.com/auth/patreon', 'Patreon Auth', 'width=600,height=700');
 });
 
 // Escuchar la respuesta de éxito desde la ventana popup
