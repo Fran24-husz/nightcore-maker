@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nightcore Maker - Create Nightcore tracks in 2 clicks</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cyberDark: '#0f111a',
+            cyberCard: '#1a1d2e',
+            neonMagenta: '#ff00ff',
+            neonCyan: '#00ffff',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .neon-glow:hover {
+      box-shadow: 0 0 15px rgba(255, 0, 255, 0.6);
+    }
+
+    .cyan-glow:focus {
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+</head>
+
+<body class="bg-cyberDark text-gray-200 font-sans min-h-full flex flex-col justify-between">
+
+  <header class="w-full max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+    <h1
+      class="text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-neonMagenta to-neonCyan">
+      NIGHTCORE MAKER
+    </h1>
+    <div id="patreon-area">
+      <button id="btn-login"
+        class="flex items-center gap-2 bg-[#f96854] hover:bg-[#e25440] text-white px-4 py-2 rounded-full text-sm font-bold transition">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+          <path
+            d="M0 .008h4.167v23.984H0V.008zm13.125.004c-6.004 0-10.873 4.864-10.873 10.86 0 6.002 4.869 10.867 10.873 10.867 6.001 0 10.875-4.865 10.875-10.867 0-5.996-4.874-10.86-10.875-10.86z" />
+        </svg>
+        Connect Patreon
+      </button>
+      <span id="premium-badge"
+        class="hidden bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-bold">
+        ⚡ Premium Member
+      </span>
+    </div>
+  </header>
+
+  <main class="flex-grow flex items-center justify-center px-4 py-6">
+    <div class="bg-cyberCard w-full max-w-md rounded-3xl p-6 shadow-2xl border border-gray-800">
+
+      <div id="dropzone"
+        class="border-2 border-dashed border-gray-700 hover:border-neonMagenta rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition bg-cyberDark/50 group">
+        <svg class="w-12 h-12 text-gray-500 group-hover:text-neonMagenta transition" fill="none" stroke="currentColor"
+          viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+        </svg>
+        <div class="text-center">
+          <p class="font-semibold text-gray-300">Drag & Drop your audio here</p>
+          <p class="text-xs text-gray-500 mt-1">Supports .mp3, .wav</p>
+        </div>
+        <input type="file" id="audio-file" accept=".mp3,.wav" class="hidden">
+      </div>
+
+      <div id="player-controls" class="mt-6 space-y-6">
+
+        <div class="text-center">
+          <p id="track-name" class="font-medium text-neonCyan truncate text-sm">No file selected</p>
+        </div>
+
+        <div class="space-y-1">
+          <div class="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
+            <div id="progress-bar" class="bg-neonMagenta h-full w-0 transition-all duration-100"></div>
+          </div>
+          <div class="flex justify-between text-xs text-gray-500">
+            <span id="current-time">0:00</span>
+            <span id="total-time">0:00</span>
+          </div>
+        </div>
+
+        <div class="flex justify-center items-center gap-6">
+          <button id="btn-play"
+            class="w-14 h-14 bg-neonMagenta hover:bg-opacity-80 text-cyberDark flex items-center justify-center rounded-full font-bold transition neon-glow shadow-lg pl-1">
+            <svg class="w-6 h-6 fill-cyberDark" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </button>
+        </div>
+
+        <hr class="border-gray-800">
+
+        <div class="space-y-4">
+          <div>
+            <div class="flex justify-between text-xs font-semibold text-gray-400 mb-1">
+              <label>Volume</label>
+              <span id="val-volume">100%</span>
+            </div>
+            <input type="range" id="slider-volume" min="0" max="1" step="0.01" value="1"
+              class="w-full accent-neonCyan bg-gray-800 rounded-lg appearance-none h-2 cursor-pointer">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-semibold text-gray-400 mb-1">
+              <label class="text-neonMagenta">Nightcore Speed</label>
+              <span id="val-speed" class="text-neonMagenta font-bold">1.25x</span>
+            </div>
+            <input type="range" id="slider-speed" min="0.5" max="2.0" step="0.05" value="1.25"
+              class="w-full accent-neonMagenta bg-gray-800 rounded-lg appearance-none h-2 cursor-pointer">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-semibold text-gray-400 mb-1">
+              <label>Reverb Decay</label>
+              <span id="val-reverb">0%</span>
+            </div>
+            <input type="range" id="slider-reverb" min="0" max="1" step="0.05" value="0"
+              class="w-full accent-neonCyan bg-gray-800 rounded-lg appearance-none h-2 cursor-pointer">
+          </div>
+
+          <div class="opacity-60 hover:opacity-100 transition relative">
+            <div class="flex justify-between text-xs font-semibold text-gray-400 mb-1 items-center">
+              <div class="flex items-center gap-1.5">
+                <label>Bass Boost</label>
+                <span
+                  class="bg-gradient-to-r from-amber-500 to-red-500 text-cyberDark text-[9px] px-1.5 py-0.5 rounded font-black tracking-wide">PRO</span>
+              </div>
+              <span id="val-bass">0%</span>
+            </div>
+            <input type="range" id="slider-bass" min="0" max="10" step="1" value="0" disabled
+              class="w-full accent-amber-500 bg-gray-800 rounded-lg appearance-none h-2 cursor-not-allowed">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 pt-2">
+          <button id="btn-download-mp3"
+            class="bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-xl text-sm transition text-center shadow-md flex items-center justify-center gap-1 opacity-75 hover:opacity-100">
+            Download MP3
+          </button>
+          <button id="btn-download-wav"
+            class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-3 px-4 rounded-xl text-sm transition text-center shadow-md flex items-center justify-center gap-1 opacity-75 hover:opacity-100">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            Download WAV
+          </button>
+        </div>
+
+        <p id="status-text" class="text-center text-[11px] text-gray-500 italic mt-2"></p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="w-full text-center py-4 text-xs text-gray-600 border-t border-gray-900 bg-cyberDark">
+    &copy; 2026 Nightcore Maker. 100% Client-side processing.
+  </footer>
+
+  <script src="src/main.js"></script>
+</body>
+
+</html>
