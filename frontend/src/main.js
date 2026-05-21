@@ -420,6 +420,7 @@ btnLogin.addEventListener('click', () => {
 
 // Escuchar la respuesta de éxito desde la ventana popup
 window.addEventListener('message', (event) => {
+  if (event.origin !== 'https://nightcore-maker-bbc8.onrender.com') return;
   if (event.data === 'patreon_success') {
     setPremium(true);
   }

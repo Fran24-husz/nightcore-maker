@@ -8,7 +8,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://nightcoremaker.online'
+}));
 app.use(express.json());
 
 const PATREON_AUTH_URL = 'https://www.patreon.com/oauth2/authorize';
@@ -74,7 +76,7 @@ app.get('/auth/callback', async (req, res) => {
 
     // Redireccionar según si es premium o no
     if (isPremium) {
-      res.send(`<script>window.opener.postMessage("patreon_success", "*"); window.close();</script>`);
+      res.send(`<script>window.opener.postMessage("patreon_success", "https://nightcoremaker.online"); window.close();</script>`);
     } else {
       res.redirect('https://www.patreon.com/c/FrankszkyNightcore/membership');
     }
