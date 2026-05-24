@@ -429,6 +429,63 @@ window.addEventListener('message', (event) => {
 // Inicializar Auth Check
 checkAuthStatus();
 
+// Exponer la función a nivel global (window) para facilitar el testing en consola
+window.setPremium = setPremium;
+
+// 1.5 LÓGICA DEL MODAL DE INFORMACIÓN (Footer)
+const modal = document.getElementById('info-modal');
+const modalTitle = document.getElementById('modal-title');
+const modalContent = document.getElementById('modal-content');
+const closeModal = document.getElementById('close-modal');
+
+const contentData = {
+  privacy: {
+    title: 'Privacy Policy',
+    html: `
+      <p>🔒 <strong>Your privacy is our priority:</strong> NightcoreMaker executes all audio manipulation directly on your machine. We do not transfer, store, or upload your audio files to any external servers.</p>
+      <p>💻 <strong>Local Processing:</strong> Every processing task is performed within your web browser utilizing the native Web Audio API. Your original files never leave the safety of your local environment.</p>
+      <p>📊 <strong>Information & Metrics:</strong> We utilize privacy-friendly analytics (such as Cloudflare Analytics) to monitor basic network performance and anonymous platform metrics without deploying tracking cookies. We strictly do not collect, store, or share personal user data.</p>
+    `
+  },
+  terms: {
+    title: 'Terms of Use',
+    html: `
+      <p>📋 <strong>Agreement to Terms:</strong> By accessing and utilizing NightcoreMaker, you explicitly acknowledge and agree to comply with these terms of service. If you do not agree, please discontinue the use of this web application.</p>
+      <p>🔧 <strong>Platform Purpose:</strong> NightcoreMaker provides an online, browser-based audio modification utility designed for personal, creative, and recreational purposes.</p>
+      <p>✅ <strong>Acceptable & Lawful Use:</strong> You agree to use this tool strictly for legitimate activities. You are prohibited from processing files that violate intellectual property laws or infringe upon third-party copyrights.</p>
+      <p>⚠️ <strong>Limitation of Liability:</strong> This software utility is delivered on an "as is" and "as available" basis without warranties of any kind. The platform developers shall not be held liable for any damages resulting from the use of this tool. You assume full legal responsibility for the media content you choose to process.</p>
+    `
+  },
+  contact: {
+    title: 'Contact',
+    html: `
+      <p>📬 <strong>Get in Touch:</strong> If you have any questions, feedback, feature requests, or technical inquiries regarding NightcoreMaker, feel free to reach out to us. We are always looking to improve the platform.</p>
+      <p>✉️ <strong>Support Email:</strong> You can contact our team directly via email at <a href="mailto:elforastero46@gmail.com" class="text-purple-400 hover:text-purple-300 underline transition-colors">elforastero46@gmail.com</a>. We do our best to respond to all legitimate inquiries as quickly as possible.</p>
+      <p>💼 <strong>Business & Partnerships:</strong> For commercial inquiries, advertising opportunities, or copyright-related matters, please use the official support email listed above.</p>
+    `
+  }
+};
+
+function openInfoModal(type) {
+  modalTitle.textContent = contentData[type].title;
+  modalContent.innerHTML = contentData[type].html;
+  modal.classList.remove('hidden');
+}
+
+document.getElementById('btn-privacy').addEventListener('click', () => openInfoModal('privacy'));
+document.getElementById('btn-terms').addEventListener('click', () => openInfoModal('terms'));
+document.getElementById('btn-contact').addEventListener('click', () => openInfoModal('contact'));
+
+closeModal.addEventListener('click', () => {
+  modal.classList.add('hidden');
+});
+
+modal.addEventListener('click', (e) => {
+  if (e.target === modal) {
+    modal.classList.add('hidden');
+  }
+});
+
 // 2. LÓGICA DE LOS SLIDERS (Actualización de textos y motor de audio en tiempo real)
 sliderVolume.addEventListener('input', (e) => {
   const val = parseFloat(e.target.value);
