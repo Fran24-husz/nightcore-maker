@@ -56,8 +56,8 @@
     </div>
   </header>
 
-  <main class="flex-grow flex items-center justify-center px-4 py-6">
-    <div class="bg-cyberCard/70 backdrop-blur-lg w-full max-w-md rounded-3xl p-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] border border-gray-700/50">
+  <main class="flex-grow flex flex-col items-center justify-center px-4 py-6 gap-6">
+    <div class="bg-cyberCard/70 backdrop-blur-lg w-full max-w-md rounded-3xl p-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] border border-gray-700/50 z-10">
 
       <div id="dropzone"
         class="border-2 border-dashed border-gray-700 hover:border-neonMagenta rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition bg-cyberDark/50 group">
@@ -160,10 +160,18 @@
         <p id="status-text" class="text-center text-[11px] text-gray-500 italic mt-2"></p>
       </div>
     </div>
+    
+    <!-- Ad 2: Centrado debajo del panel -->
+    <div id="ad-container-bottom" class="w-full flex justify-center items-center ad-wrapper z-10 overflow-hidden min-h-[90px]">
+    </div>
   </main>
 
-  <footer class="w-full text-center py-4 text-xs text-gray-600 border-t border-gray-900 bg-cyberDark">
-    &copy; 2026 Nightcore Maker. 100% Client-side processing.
+  <footer class="w-full flex flex-col items-center py-4 text-xs text-gray-600 border-t border-gray-900 bg-cyberDark/90 gap-4 z-10">
+    <!-- Ad 1: En el footer arriba del copyright -->
+    <div id="ad-container-footer" class="w-full flex justify-center items-center ad-wrapper overflow-hidden min-h-[90px]">
+    </div>
+
+    <div>&copy; 2026 Nightcore Maker. 100% Client-side processing.</div>
   </footer>
 
   <script type="module" src="./src/main.js"></script>
