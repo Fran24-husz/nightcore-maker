@@ -393,46 +393,8 @@ function checkAuthStatus() {
   }
 }
 
-function injectAds() {
-  // Inject Ad 1 (Footer)
-  const footerAdContainer = document.getElementById('ad-container-footer');
-  if (footerAdContainer && footerAdContainer.childElementCount === 0) {
-    const scriptConf = document.createElement('script');
-    scriptConf.type = 'text/javascript';
-    scriptConf.innerHTML = `atOptions = {
-      'key' : '0d3834b537962ff2d91ffa80376a32a5',
-      'format' : 'iframe',
-      'height' : 90,
-      'width' : 728,
-      'params' : {}
-    };`;
-    footerAdContainer.appendChild(scriptConf);
-
-    const scriptInvoke = document.createElement('script');
-    scriptInvoke.type = 'text/javascript';
-    scriptInvoke.src = 'https://www.highperformanceformat.com/0d3834b537962ff2d91ffa80376a32a5/invoke.js';
-    footerAdContainer.appendChild(scriptInvoke);
-  }
-
-  // Inject Ad 2 (Bottom Main)
-  const bottomAdContainer = document.getElementById('ad-container-bottom');
-  if (bottomAdContainer && bottomAdContainer.childElementCount === 0) {
-    const containerDiv = document.createElement('div');
-    containerDiv.id = 'container-029643c7384ab32a93eb6ffe2d4149d2';
-    bottomAdContainer.appendChild(containerDiv);
-
-    const scriptInvoke2 = document.createElement('script');
-    scriptInvoke2.type = 'text/javascript';
-    scriptInvoke2.async = true;
-    scriptInvoke2.setAttribute('data-cfasync', 'false');
-    scriptInvoke2.src = 'https://pl29532535.effectivecpmnetwork.com/029643c7384ab32a93eb6ffe2d4149d2/invoke.js';
-    bottomAdContainer.appendChild(scriptInvoke2);
-  }
-}
-
 function setPremium(premium) {
   isPremium = premium;
-  const adWrappers = document.querySelectorAll('.ad-wrapper');
   if (premium) {
     btnLogin.classList.add('hidden');
     premiumBadge.classList.remove('hidden');
@@ -441,10 +403,6 @@ function setPremium(premium) {
     sliderBass.disabled = false;
     sliderBass.classList.remove('cursor-not-allowed');
     sliderBass.parentElement.classList.remove('opacity-60');
-    adWrappers.forEach(el => {
-      el.innerHTML = '';
-      el.style.display = 'none';
-    });
   } else {
     btnLogin.classList.remove('hidden');
     premiumBadge.classList.add('hidden');
@@ -453,8 +411,6 @@ function setPremium(premium) {
     sliderBass.disabled = true;
     sliderBass.classList.add('cursor-not-allowed');
     sliderBass.parentElement.classList.add('opacity-60');
-    adWrappers.forEach(el => el.style.display = 'flex');
-    injectAds();
   }
 }
 
@@ -472,9 +428,6 @@ window.addEventListener('message', (event) => {
 
 // Inicializar Auth Check
 checkAuthStatus();
-
-// Exponer la función a nivel global (window) para facilitar el testing en consola
-window.setPremium = setPremium;
 
 // 2. LÓGICA DE LOS SLIDERS (Actualización de textos y motor de audio en tiempo real)
 sliderVolume.addEventListener('input', (e) => {
