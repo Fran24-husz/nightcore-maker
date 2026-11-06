@@ -6,164 +6,613 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nightcore Maker - Create Nightcore tracks in 2 clicks</title>
   <link rel="icon" type="image/png" href="/Slovtit.png">
+
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+          },
           colors: {
-            cyberDark: '#0f111a',
+            cyberDark: '#0f0f13',
             cyberCard: '#1a1d2e',
-            neonMagenta: '#ff00ff',
-            neonCyan: '#00ffff',
+            neonMagenta: '#ff007f',
+            neonCyan: '#00f3ff',
+            neonPurple: '#8a2be2',
+            neonPanel: 'rgba(15, 15, 25, 0.65)',
+          },
+          boxShadow: {
+            'neon-pink': '0 0 15px rgba(255, 0, 127, 0.5)',
+            'neon-cyan': '0 0 15px rgba(0, 243, 255, 0.5)',
           }
         }
       }
     }
   </script>
+
   <style>
-    .neon-glow:hover {
-      box-shadow: 0 0 15px rgba(255, 0, 255, 0.6);
+    /* Custom Range Slider Styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      background: transparent;
+      height: 6px;
+      border-radius: 4px;
+      outline: none;
+      position: relative;
+      cursor: pointer;
     }
 
-    .cyan-glow:focus {
-      box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      border: none;
     }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 14px;
+      width: 14px;
+      border-radius: 50%;
+      background: #fff;
+      margin-top: -4px;
+      box-shadow: 0 0 10px rgba(255,255,255,0.5);
+      transition: transform 0.1s;
+      z-index: 2;
+      position: relative;
+    }
+
+    input[type=range]:active::-webkit-slider-thumb {
+      transform: scale(1.3);
+    }
+
+    /* Dynamic fill track using CSS variables */
+    .slider-cyan { --fill-color: #00f3ff; }
+    .slider-pink { --fill-color: #ff007f; }
+    .slider-amber { --fill-color: #f59e0b; }
+    .slider-gray { --fill-color: #a0aec0; }
+
+    input[type=range]::before {
+      content: '';
+      position: absolute;
+      height: 6px;
+      border-radius: 4px;
+      background: var(--fill-color);
+      width: var(--value, 0%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .glow-text {
+      text-shadow: 0 0 10px rgba(0, 243, 255, 0.7);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #0f0f13; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #ff007f; }
+
+    /* Background overlay */
+    .bg-overlay {
+      background: radial-gradient(circle at 50% 50%, rgba(15, 15, 25, 0.3) 0%, rgba(5, 5, 10, 0.9) 100%);
+    }
+
+    /* Animated Glowing Border for App Card */
+    .glass-panel {
+      position: relative;
+      transition: box-shadow 1s ease, background-color 1s ease, border-color 1s ease;
+    }
+    .glass-panel::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 2rem;
+      background: linear-gradient(90deg, #00f3ff, #ff007f, #8a2be2, #00f3ff);
+      background-size: 300% 100%;
+      animation: border-flow 4s linear infinite;
+      z-index: -1;
+      opacity: 0.8;
+      transition: opacity 1s ease;
+    }
+    @keyframes border-flow {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+
+    /* Disable Glow State */
+    .disable-glow::before,
+    .disable-glow::after {
+      display: none !important;
+      animation: none !important;
+    }
+    .glass-panel.disable-glow {
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.55) !important;
+      background-color: rgba(22, 24, 34, 0.75) !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    /* Audio Visualizer Bar base style */
+    .vis-bar {
+      width: 4px;
+      border-radius: 2px;
+      transition: height 0.08s ease-out;
+      min-height: 3px;
+    }
+
+    /* Scanlines for the right frame */
+    .scanlines {
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,243,255,0.1) 50%, rgba(0,243,255,0.1));
+      background-size: 100% 4px;
+      z-index: 10;
+    }
+
+    /* Floating Glowing Neon/Fire Particles */
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: float-up infinite ease-in;
+      will-change: transform, opacity;
+    }
+    @keyframes float-up {
+      0% {
+        transform: translateY(0) translateX(0) scale(0.5);
+        opacity: 0;
+      }
+      15% {
+        opacity: 0.9;
+      }
+      50% {
+        transform: translateY(-50vh) translateX(16px) scale(1.15);
+        opacity: 0.85;
+      }
+      80% {
+        opacity: 0.7;
+      }
+      100% {
+        transform: translateY(-110vh) translateX(-16px) scale(0.35);
+        opacity: 0;
+      }
+    }
+
+    /* Glitch Overlay */
+    .glitch-overlay {
+      animation: glitch-anim 4s infinite linear alternate-reverse;
+    }
+    @keyframes glitch-anim {
+      0% { opacity: 0.1; transform: translateX(0); }
+      5% { opacity: 0.3; transform: translateX(2px); }
+      10% { opacity: 0.1; transform: translateX(-2px); }
+      15% { opacity: 0.1; transform: translateX(0); }
+      100% { opacity: 0.1; transform: translateX(0); }
+    }
+
+    /* Fade animations */
+    .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    .animate-fade-in-up { animation: fadeInUp 0.7s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
   </style>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8195799048870430" crossorigin="anonymous"></script>
 </head>
 
-<body class="bg-cyberDark bg-[url('/back3.png')] bg-cover bg-center bg-no-repeat bg-fixed text-gray-200 font-sans min-h-full flex flex-col justify-between">
+<body class="bg-[#0b0c14] text-gray-200 min-h-screen flex flex-col font-sans selection:bg-neonMagenta selection:text-white relative overflow-x-hidden" style="isolation: isolate;">
 
-  <header class="w-full max-w-4xl mx-auto px-4 py-4 flex justify-between items-center backdrop-blur-sm bg-cyberDark/30">
-    <h1
-      class="text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-neonMagenta to-neonCyan drop-shadow-md">
-      NIGHTCORE MAKER
-    </h1>
+  <!-- Particle Container with z-index: -1 behind all UI elements -->
+  <div id="particles-container" class="fixed inset-0 pointer-events-none overflow-hidden" style="z-index: -1;"></div>
+
+  <!-- Top Navigation -->
+  <header class="relative z-20 w-full px-6 py-5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-neonCyan to-blue-600 flex items-center justify-center shadow-neon-cyan">
+        <i class="ph-fill ph-waveform text-white text-xl"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-white tracking-wider glow-text uppercase">NIGHTCORE MAKER</h1>
+    </div>
     <div id="patreon-area">
       <button id="btn-login"
-        class="flex items-center gap-2 bg-[#f96854] hover:bg-[#e25440] text-white px-4 py-2 rounded-full text-sm font-bold transition shadow-lg">
-        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-          <path
-            d="M0 .008h4.167v23.984H0V.008zm13.125.004c-6.004 0-10.873 4.864-10.873 10.86 0 6.002 4.869 10.867 10.873 10.867 6.001 0 10.875-4.865 10.875-10.867 0-5.996-4.874-10.86-10.875-10.86z" />
+        class="flex items-center gap-2.5 bg-[#FF424D] hover:bg-[#ff5a64] text-white px-6 py-3 rounded-full font-bold text-base transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(255,66,77,0.6)]">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+          <path d="M0 .008h4.167v23.984H0V.008zm13.125.004c-6.004 0-10.873 4.864-10.873 10.86 0 6.002 4.869 10.867 10.873 10.867 6.001 0 10.875-4.865 10.875-10.867 0-5.996-4.874-10.86-10.875-10.86z" />
         </svg>
         Connect Patreon
       </button>
       <span id="premium-badge"
-        class="hidden bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+        class="hidden bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-full text-base font-bold shadow-lg">
         ⚡ Premium Member
       </span>
     </div>
   </header>
 
-  <main class="flex-grow flex items-center justify-center px-4 py-6">
-    <div class="bg-cyberCard/70 backdrop-blur-lg w-full max-w-md rounded-3xl p-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] border border-gray-700/50">
+  <!-- Main Workspace: 3-column layout -->
+  <main class="relative z-10 flex-1 flex flex-row items-center justify-between px-4 lg:px-8 xl:px-12 pb-0 min-h-[calc(100vh-90px)]">
 
+    <!-- Left Sprite: Character with Grounding Neon Line -->
+    <div class="hidden lg:flex flex-col w-[320px] xl:w-[420px] 2xl:w-[480px] self-stretch justify-end items-start relative pointer-events-none select-none overflow-visible">
+      <img src="/character.png" alt="Huszky Character"
+        class="h-[76vh] max-h-[760px] min-h-[520px] w-auto max-w-none object-contain object-bottom select-none drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] filter contrast-105"
+        style="transform: scale(1.08) translateX(-4%); transform-origin: bottom left;" />
+      
+      <!-- Grounding Horizontal Line directly beneath anime character -->
+      <div class="w-full max-w-[420px] xl:max-w-[480px] relative mt-[-2px] z-20">
+        <!-- Main glowing neon baseline -->
+        <div class="h-[3px] w-full bg-gradient-to-r from-neonCyan via-neonMagenta to-transparent rounded-full shadow-[0_0_14px_rgba(0,243,255,0.95)]"></div>
+        <!-- Accent sub-glow line -->
+        <div class="h-[1px] w-3/4 bg-gradient-to-r from-white via-neonCyan to-transparent mt-[2px] opacity-80"></div>
+      </div>
+    </div>
+
+    <!-- Center App Card -->
+    <div id="central-panel" class="glass-panel w-full max-w-[480px] bg-neonPanel backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-[0_0_40px_rgba(0,243,255,0.2)] mx-auto my-6 transform transition-all duration-300 hover:scale-[1.01] flex flex-col gap-5 relative">
+
+      <!-- Subtle FX Glow Toggle Button in top right corner -->
+      <button id="btn-toggle-glow"
+        class="absolute top-4 right-5 text-[11px] font-mono tracking-wider px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-neonCyan/40 text-neonCyan hover:text-white backdrop-blur-md shadow-sm transition-all duration-300 flex items-center gap-1 z-20 cursor-pointer select-none"
+        title="Toggle glowing border effect">
+        ✨ FX: ON
+      </button>
+
+      <!-- Drag & Drop Zone -->
       <div id="dropzone"
-        class="border-2 border-dashed border-gray-700 hover:border-neonMagenta rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition bg-cyberDark/50 group">
-        <svg class="w-12 h-12 text-gray-500 group-hover:text-neonMagenta transition" fill="none" stroke="currentColor"
-          viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-        </svg>
-        <div class="text-center">
-          <p class="font-semibold text-gray-300">Drag & Drop your audio here</p>
-          <p class="text-xs text-gray-500 mt-1">Supports .mp3, .wav</p>
-        </div>
+        class="w-full h-32 border-2 border-dashed border-neonCyan/40 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-neonMagenta hover:bg-white/10 hover:shadow-[inset_0_0_15px_rgba(255,0,127,0.3)] transition-all duration-300 group">
+        <i class="ph ph-cloud-arrow-up text-4xl text-neonCyan group-hover:text-neonMagenta transition-colors mb-2 animate-bounce"></i>
+        <p class="text-white font-medium text-sm">Drag & Drop your audio here</p>
+        <p class="text-neonCyan/70 text-xs mt-1 font-mono">Supports .mp3, .wav</p>
         <input type="file" id="audio-file" accept=".mp3,.wav" class="hidden">
       </div>
 
-      <div id="player-controls" class="mt-6 space-y-6">
+      <!-- Player Section -->
+      <div id="player-controls" class="w-full flex flex-col items-center mt-2">
+        <h3 id="track-name" class="text-white font-bold tracking-wide text-lg mb-1 glow-text truncate w-full text-center">No file selected</h3>
 
-        <div class="text-center">
-          <p id="track-name" class="font-medium text-neonCyan truncate text-sm">No file selected</p>
+        <!-- Audio Visualizer Bars (driven by audio) -->
+        <div id="visualizer" class="flex items-end gap-1.5 h-12 mb-3 w-full justify-center">
+          <!-- 20 bars generated by JS -->
         </div>
 
-        <div class="space-y-1">
-          <div class="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
-            <div id="progress-bar" class="bg-neonMagenta h-full w-0 transition-all duration-100"></div>
-          </div>
-          <div class="flex justify-between text-xs text-gray-500">
-            <span id="current-time">0:00</span>
-            <span id="total-time">0:00</span>
-          </div>
+        <!-- Progress Bar -->
+        <div class="w-full flex items-center justify-between text-xs text-gray-400 font-mono mb-2">
+          <span id="current-time">0:00</span>
+          <span id="total-time">0:00</span>
+        </div>
+        <div class="w-full h-1.5 bg-gray-800 rounded-full mb-6 overflow-hidden relative cursor-pointer">
+          <div id="progress-bar" class="absolute top-0 left-0 h-full bg-neonMagenta w-0 shadow-[0_0_10px_rgba(255,0,127,0.8)] transition-all duration-100"></div>
         </div>
 
-        <div class="flex justify-center items-center gap-6">
-          <button id="btn-play"
-            class="w-14 h-14 bg-neonMagenta hover:bg-opacity-80 text-cyberDark flex items-center justify-center rounded-full font-bold transition neon-glow shadow-lg pl-1">
-            <svg class="w-6 h-6 fill-cyberDark" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </button>
+        <!-- Play Button -->
+        <button id="btn-play"
+          class="w-16 h-16 rounded-full bg-neonMagenta text-white flex items-center justify-center text-2xl shadow-neon-pink hover:scale-110 hover:bg-[#ff1a8c] transition-all duration-300">
+          <svg class="w-7 h-7 fill-white ml-1" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Controls (Sliders) -->
+      <div class="w-full flex flex-col gap-5 mt-4">
+
+        <!-- Volume -->
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between text-sm font-medium text-gray-300">
+            <label>Volume</label>
+            <span id="val-volume">100%</span>
+          </div>
+          <input type="range" id="slider-volume" min="0" max="1" step="0.01" value="1" class="slider-cyan">
         </div>
 
-        <hr class="border-gray-800">
-
-        <div class="space-y-4">
-          <div>
-            <div class="flex justify-between text-xs font-semibold text-gray-400 mb-1">
-              <label>Volume</label>
-              <span id="val-volume">100%</span>
-            </div>
-            <input type="range" id="slider-volume" min="0" max="1" step="0.01" value="1"
-              class="w-full accent-neonCyan bg-gray-800 rounded-lg appearance-none h-2 cursor-pointer">
+        <!-- Nightcore Speed -->
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between text-sm font-semibold">
+            <label class="text-neonMagenta">Nightcore Speed</label>
+            <span id="val-speed" class="text-neonMagenta">1.25x</span>
           </div>
+          <input type="range" id="slider-speed" min="0.50" max="2.00" step="0.01" value="1.25" class="slider-pink">
+        </div>
 
-          <div>
-            <div class="flex justify-between text-xs font-semibold text-gray-400 mb-1">
-              <label class="text-neonMagenta">Nightcore Speed</label>
-              <span id="val-speed" class="text-neonMagenta font-bold">1.25x</span>
-            </div>
-            <input type="range" id="slider-speed" min="0.5" max="2.0" step="0.05" value="1.25"
-              class="w-full accent-neonMagenta bg-gray-800 rounded-lg appearance-none h-2 cursor-pointer">
+        <!-- Reverb Decay -->
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between text-sm font-medium text-gray-400">
+            <label>Reverb Decay</label>
+            <span id="val-reverb">0%</span>
           </div>
+          <input type="range" id="slider-reverb" min="0" max="1" step="0.05" value="0" class="slider-cyan">
+        </div>
 
-          <div>
-            <div class="flex justify-between text-xs font-semibold text-gray-400 mb-1">
-              <label>Reverb Decay</label>
-              <span id="val-reverb">0%</span>
+        <!-- Bass Boost (PRO) -->
+        <div class="flex flex-col gap-2 opacity-60 hover:opacity-100 transition">
+          <div class="flex justify-between text-sm font-medium text-gray-400 items-center">
+            <div class="flex items-center gap-2">
+              <label>Bass Boost</label>
+              <span class="bg-orange-500/20 text-orange-400 border border-orange-500/50 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">PRO</span>
             </div>
-            <input type="range" id="slider-reverb" min="0" max="1" step="0.05" value="0"
-              class="w-full accent-neonCyan bg-gray-800 rounded-lg appearance-none h-2 cursor-pointer">
+            <span id="val-bass">0%</span>
           </div>
+          <input type="range" id="slider-bass" min="0" max="10" step="1" value="0" disabled class="slider-amber cursor-not-allowed">
+        </div>
+      </div>
 
-          <div class="opacity-60 hover:opacity-100 transition relative">
-            <div class="flex justify-between text-xs font-semibold text-gray-400 mb-1 items-center">
-              <div class="flex items-center gap-1.5">
-                <label>Bass Boost</label>
-                <span
-                  class="bg-gradient-to-r from-amber-500 to-red-500 text-cyberDark text-[9px] px-1.5 py-0.5 rounded font-black tracking-wide">PRO</span>
+      <!-- Download Buttons -->
+      <div class="w-full grid grid-cols-2 gap-4 mt-2">
+        <button id="btn-download-mp3"
+          class="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/5 text-white py-3 rounded-xl font-medium transition-all duration-300 text-sm">
+          Download MP3
+        </button>
+        <button id="btn-download-wav"
+          class="flex items-center justify-center gap-2 bg-gradient-to-r from-[#8a2be2] to-[#b026ff] hover:from-[#9b3df3] hover:to-[#c23dff] text-white py-3 rounded-xl font-medium transition-all duration-300 shadow-[0_4px_15px_rgba(138,43,226,0.4)] text-sm">
+          <i class="ph-bold ph-download-simple"></i>
+          Download WAV
+        </button>
+      </div>
+
+      <p id="status-text" class="text-center text-[11px] text-neonCyan/70 font-mono mt-1 italic"></p>
+    </div>
+
+    <!-- Right: YouTube Channel Frame -->
+    <div class="hidden lg:flex flex-1 max-w-[400px] xl:max-w-[450px] 2xl:max-w-[480px] self-stretch items-center justify-center relative group my-auto">
+      <div class="relative w-full max-w-[390px] xl:max-w-[430px] aspect-[3/4] min-h-[520px] xl:min-h-[580px] p-1 bg-black/75 border border-neonCyan/35 shadow-[0_0_35px_rgba(0,243,255,0.25)] rounded-2xl overflow-hidden transition-all duration-500 group-hover:shadow-[0_0_45px_rgba(255,0,127,0.4)] group-hover:border-neonMagenta/60 flex flex-col">
+
+        <!-- Cyberpunk Corner Accents -->
+        <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-neonCyan z-20 transition-colors group-hover:border-neonMagenta"></div>
+        <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-neonMagenta z-20"></div>
+        <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-neonMagenta z-20"></div>
+        <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-neonCyan z-20 transition-colors group-hover:border-neonMagenta"></div>
+
+        <!-- Scanlines and Glitch Overlays -->
+        <div class="absolute inset-0 scanlines pointer-events-none"></div>
+        <div class="absolute inset-0 glitch-overlay bg-neonCyan mix-blend-overlay pointer-events-none group-hover:bg-neonMagenta transition-colors"></div>
+
+        <!-- Content Frame -->
+        <div class="w-full h-full relative z-10 bg-[#0f0f13] flex flex-col justify-between p-5">
+
+          <!-- Header HUD (Visit my Channel!) -->
+          <a href="https://www.youtube.com/@Huszky" target="_blank" rel="noopener noreferrer"
+            class="flex justify-between items-center px-4 py-2.5 bg-neonCyan/10 border border-neonCyan/30 rounded-xl group-hover:bg-neonMagenta/10 group-hover:border-neonMagenta/30 transition-all no-underline">
+            <span class="text-xs font-mono font-bold text-neonCyan group-hover:text-neonMagenta tracking-widest uppercase transition-colors">Visit my Channel!</span>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-mono text-neonCyan/70">LIVE</span>
+              <div class="w-2.5 h-2.5 rounded-full bg-neonMagenta animate-pulse"></div>
+            </div>
+          </a>
+
+          <!-- YouTube Channel Showcase Card -->
+          <a href="https://www.youtube.com/@Huszky" target="_blank" rel="noopener noreferrer"
+            class="flex-1 my-3 flex flex-col items-center justify-center text-center p-5 rounded-2xl bg-gradient-to-b from-white/[0.07] via-white/[0.02] to-transparent border border-white/5 hover:border-red-500/40 hover:bg-white/[0.09] transition-all duration-300 group/card no-underline">
+
+            <!-- Channel Profile Picture Avatar -->
+            <div class="relative mb-4">
+              <div class="w-28 h-28 xl:w-32 xl:h-32 rounded-full p-1 bg-gradient-to-tr from-neonCyan via-neonMagenta to-red-600 shadow-[0_0_25px_rgba(255,0,127,0.5)] group-hover/card:shadow-[0_0_35px_rgba(0,243,255,0.7)] group-hover/card:scale-105 transition-all duration-300">
+                <img src="/channel_avatar.jpg" alt="Huszky Profile Picture"
+                  class="w-full h-full rounded-full object-cover object-center select-none" />
               </div>
-              <span id="val-bass">0%</span>
+              <span class="absolute bottom-1 right-1 bg-red-600 text-white text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-lg flex items-center gap-1 border border-black/50">
+                <svg class="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                YT
+              </span>
             </div>
-            <input type="range" id="slider-bass" min="0" max="10" step="1" value="0" disabled
-              class="w-full accent-amber-500 bg-gray-800 rounded-lg appearance-none h-2 cursor-not-allowed">
+
+            <!-- Channel Details -->
+            <h4 class="text-white font-black text-2xl tracking-wide group-hover/card:text-neonCyan transition-colors">Huszky</h4>
+            <p class="text-sm text-neonMagenta font-mono font-semibold mt-0.5">@Huszky</p>
+            <p class="text-xs text-gray-300 mt-2.5 max-w-[280px] leading-relaxed">Nightcore remixes of historical, military & patriotic anthems</p>
+
+            <!-- Badges -->
+            <div class="flex flex-wrap gap-2 justify-center mt-3.5">
+              <span class="text-xs bg-red-500/20 text-red-400 border border-red-500/40 px-3 py-1 rounded-full font-mono font-semibold">20K+ Subs</span>
+              <span class="text-xs bg-neonCyan/20 text-neonCyan border border-neonCyan/40 px-3 py-1 rounded-full font-mono font-semibold">Nightcore</span>
+            </div>
+
+            <!-- YouTube CTA Button -->
+            <div class="mt-5 w-full bg-red-600 hover:bg-red-500 text-white font-bold text-sm py-3 px-5 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_22px_rgba(220,38,38,0.55)] group-hover/card:scale-[1.03] transition-all">
+              <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M10 15l5-3-5-3v6z"/><path d="M21.58 7.19a2.51 2.51 0 0 0-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42a2.51 2.51 0 0 0-1.77 1.77A26.33 26.33 0 0 0 2 12a26.33 26.33 0 0 0 .42 4.81 2.51 2.51 0 0 0 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42a2.51 2.51 0 0 0 1.77-1.77A26.33 26.33 0 0 0 22 12a26.33 26.33 0 0 0-.42-4.81zM10 15V9l5 3-5 3z"/></svg>
+              Visit Channel & Videos
+            </div>
+          </a>
+
+          <!-- Telemetry info HUD -->
+          <div class="flex justify-between items-end text-[10px] font-mono text-neonCyan/70 pt-2.5 border-t border-white/5">
+            <span>TARGET: <span class="text-white">@Huszky</span></span>
+            <span class="text-right">FEED: <span class="text-neonMagenta animate-pulse">ACTIVE</span></span>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 pt-2">
-          <button id="btn-download-mp3"
-            class="bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-xl text-sm transition text-center shadow-md flex items-center justify-center gap-1 opacity-75 hover:opacity-100">
-            Download MP3
-          </button>
-          <button id="btn-download-wav"
-            class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-3 px-4 rounded-xl text-sm transition text-center shadow-md flex items-center justify-center gap-1 opacity-75 hover:opacity-100">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            Download WAV
-          </button>
+        <!-- Floating HUD Elements outside frame -->
+        <div class="absolute -right-5 top-1/4 w-4 flex flex-col gap-2.5 opacity-60 group-hover:opacity-100 transition-opacity pointer-events-none">
+          <div class="w-1.5 h-10 bg-neonCyan/60 ml-auto group-hover:bg-neonMagenta"></div>
+          <div class="w-2.5 h-2.5 bg-neonMagenta rounded-full ml-auto animate-ping"></div>
+          <div class="w-1.5 h-14 bg-neonCyan/60 ml-auto mt-2 group-hover:bg-neonMagenta"></div>
         </div>
-
-        <p id="status-text" class="text-center text-[11px] text-gray-500 italic mt-2"></p>
       </div>
     </div>
+
   </main>
 
-  <footer class="w-full text-center py-4 text-xs text-gray-600 border-t border-gray-900 bg-cyberDark">
+  <!-- Structured Content Sections for SEO & AdSense -->
+  <section class="relative z-10 w-full max-w-4xl mx-auto px-4 py-12 space-y-16 text-gray-300">
+
+    <!-- What is Nightcore? -->
+    <article>
+      <h2 class="text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-neonMagenta to-neonCyan mb-6">
+        What Is Nightcore Music?
+      </h2>
+      <div class="bg-neonPanel backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/10 space-y-4 text-sm leading-relaxed">
+        <p>
+          <strong class="text-neonCyan">Nightcore</strong> is a music style that originated in Norway around 2001, created by Thomas S. Nilsen and Steinar Vadmyr. The name comes from their DJ project, and the technique quickly spread across the internet, especially through anime music videos on YouTube.
+        </p>
+        <p>
+          At its core, Nightcore involves <strong class="text-white">speeding up a song</strong> — typically by 20–35% — which naturally raises the pitch, giving vocals a higher, euphoric quality. The result is an energetic, upbeat version of the original track that feels fresh and immersive.
+        </p>
+        <p>
+          Key characteristics of a Nightcore remix include:
+        </p>
+        <ul class="list-disc list-inside space-y-1 text-gray-400 pl-2">
+          <li><strong class="text-white">Higher tempo</strong> — usually between 140–180 BPM, creating a driving, dance-friendly rhythm.</li>
+          <li><strong class="text-white">Raised pitch</strong> — vocals sound lighter and more ethereal, which gives the track its signature feel.</li>
+          <li><strong class="text-white">Emotional intensity</strong> — the combination of speed and pitch amplifies the emotion of the original song.</li>
+          <li><strong class="text-white">Genre flexibility</strong> — pop, EDM, rock, J-pop, and virtually any genre can be "nightcored."</li>
+        </ul>
+        <p>
+          Nightcore has grown into a massive community on YouTube, Spotify, and SoundCloud. Creators pair their remixes with anime-style artwork, building a distinct visual and audio aesthetic loved by millions of listeners worldwide.
+        </p>
+      </div>
+    </article>
+
+    <!-- How to Use This Tool -->
+    <article>
+      <h2 class="text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-neonMagenta to-neonCyan mb-6">
+        How to Create Nightcore — Step-by-Step Guide
+      </h2>
+      <div class="bg-neonPanel backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/10 space-y-5 text-sm leading-relaxed">
+        <p>
+          Making your own Nightcore remix with <strong class="text-neonCyan">Nightcore Maker</strong> is fast, free, and requires zero technical knowledge. Follow these simple steps:
+        </p>
+        <div class="space-y-4">
+          <div class="flex gap-4 items-start">
+            <span class="flex-shrink-0 w-8 h-8 bg-neonMagenta text-white font-black rounded-full flex items-center justify-center text-sm">1</span>
+            <div>
+              <h3 class="font-bold text-white">Upload Your Audio File</h3>
+              <p class="text-gray-400 mt-1">Click or drag-and-drop an <strong>.mp3</strong> or <strong>.wav</strong> file into the upload zone. Your song will be loaded instantly inside your browser — nothing is uploaded to any server.</p>
+            </div>
+          </div>
+          <div class="flex gap-4 items-start">
+            <span class="flex-shrink-0 w-8 h-8 bg-neonMagenta text-white font-black rounded-full flex items-center justify-center text-sm">2</span>
+            <div>
+              <h3 class="font-bold text-white">Adjust the Nightcore Speed</h3>
+              <p class="text-gray-400 mt-1">Use the <strong class="text-neonMagenta">Nightcore Speed</strong> slider to set your desired playback rate. The classic Nightcore sound sits between <strong>1.20x</strong> and <strong>1.35x</strong>. You can fine-tune it in 0.01 increments for precise control.</p>
+            </div>
+          </div>
+          <div class="flex gap-4 items-start">
+            <span class="flex-shrink-0 w-8 h-8 bg-neonMagenta text-white font-black rounded-full flex items-center justify-center text-sm">3</span>
+            <div>
+              <h3 class="font-bold text-white">Fine-Tune with Effects</h3>
+              <p class="text-gray-400 mt-1">Optionally adjust the <strong>Volume</strong> and <strong>Reverb Decay</strong> sliders. Reverb adds a spacious, echoing quality. Premium members can also enable <strong>Bass Boost</strong> for deeper lows.</p>
+            </div>
+          </div>
+          <div class="flex gap-4 items-start">
+            <span class="flex-shrink-0 w-8 h-8 bg-neonMagenta text-white font-black rounded-full flex items-center justify-center text-sm">4</span>
+            <div>
+              <h3 class="font-bold text-white">Preview in Real Time</h3>
+              <p class="text-gray-400 mt-1">Hit the <strong>Play</strong> button to hear your Nightcore remix live. All processing happens in real time inside your browser. Tweak sliders while the track plays to dial in the perfect sound.</p>
+            </div>
+          </div>
+          <div class="flex gap-4 items-start">
+            <span class="flex-shrink-0 w-8 h-8 bg-neonMagenta text-white font-black rounded-full flex items-center justify-center text-sm">5</span>
+            <div>
+              <h3 class="font-bold text-white">Download Your Remix</h3>
+              <p class="text-gray-400 mt-1">Once satisfied, Premium members can download the finished remix as an <strong>MP3</strong> or high-quality <strong>WAV</strong> file. The audio is rendered offline in your browser and saved directly to your device.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- FAQ Section -->
+    <article>
+      <h2 class="text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-neonMagenta to-neonCyan mb-6">
+        Frequently Asked Questions
+      </h2>
+      <div class="space-y-4">
+
+        <details class="bg-neonPanel backdrop-blur-md rounded-2xl border border-white/10 group" open>
+          <summary class="cursor-pointer p-5 font-bold text-white text-sm flex justify-between items-center hover:text-neonCyan transition">
+            What audio formats are supported?
+            <svg class="w-4 h-4 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </summary>
+          <div class="px-5 pb-5 text-sm text-gray-400 leading-relaxed">
+            Nightcore Maker currently supports <strong class="text-white">.mp3</strong> and <strong class="text-white">.wav</strong> file formats. These cover the vast majority of audio files. Simply drag your file into the upload area or click to browse your device. Support for additional formats like OGG and FLAC may be added in future updates.
+          </div>
+        </details>
+
+        <details class="bg-neonPanel backdrop-blur-md rounded-2xl border border-white/10 group">
+          <summary class="cursor-pointer p-5 font-bold text-white text-sm flex justify-between items-center hover:text-neonCyan transition">
+            Is my audio uploaded to a server?
+            <svg class="w-4 h-4 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </summary>
+          <div class="px-5 pb-5 text-sm text-gray-400 leading-relaxed">
+            <strong class="text-neonCyan">No.</strong> All audio processing is performed 100% locally inside your web browser using the Web Audio API. Your files never leave your device — nothing is uploaded, stored, or transmitted to any external server. Your music stays private.
+          </div>
+        </details>
+
+        <details class="bg-neonPanel backdrop-blur-md rounded-2xl border border-white/10 group">
+          <summary class="cursor-pointer p-5 font-bold text-white text-sm flex justify-between items-center hover:text-neonCyan transition">
+            Is Nightcore Maker free to use?
+            <svg class="w-4 h-4 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </summary>
+          <div class="px-5 pb-5 text-sm text-gray-400 leading-relaxed">
+            <strong class="text-white">Yes!</strong> The core tool — uploading audio, adjusting speed, volume, reverb, and live previewing — is completely free with no limits. <strong class="text-neonMagenta">Premium members</strong> (via Patreon) unlock additional features: downloading finished remixes as MP3/WAV files and the Bass Boost effect.
+          </div>
+        </details>
+
+        <details class="bg-neonPanel backdrop-blur-md rounded-2xl border border-white/10 group">
+          <summary class="cursor-pointer p-5 font-bold text-white text-sm flex justify-between items-center hover:text-neonCyan transition">
+            What is the ideal speed for a Nightcore remix?
+            <svg class="w-4 h-4 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </summary>
+          <div class="px-5 pb-5 text-sm text-gray-400 leading-relaxed">
+            The classic Nightcore sound typically uses a speed of <strong class="text-white">1.20x to 1.35x</strong>. The default setting in this tool is <strong>1.25x</strong>, which works great for most songs. Feel free to experiment — some tracks sound best at higher or lower speeds depending on the original BPM and genre.
+          </div>
+        </details>
+
+        <details class="bg-neonPanel backdrop-blur-md rounded-2xl border border-white/10 group">
+          <summary class="cursor-pointer p-5 font-bold text-white text-sm flex justify-between items-center hover:text-neonCyan transition">
+            Does it work on mobile devices?
+            <svg class="w-4 h-4 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </summary>
+          <div class="px-5 pb-5 text-sm text-gray-400 leading-relaxed">
+            Yes. Nightcore Maker is fully responsive and works on modern mobile browsers including Chrome, Safari, and Firefox on both Android and iOS. All processing runs client-side, so no app installation is required — just open the page and start creating.
+          </div>
+        </details>
+
+        <details class="bg-neonPanel backdrop-blur-md rounded-2xl border border-white/10 group">
+          <summary class="cursor-pointer p-5 font-bold text-white text-sm flex justify-between items-center hover:text-neonCyan transition">
+            Is there a file size limit?
+            <svg class="w-4 h-4 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </summary>
+          <div class="px-5 pb-5 text-sm text-gray-400 leading-relaxed">
+            There is no hard file size limit imposed by the tool since everything runs in your browser. However, very large files (over ~100 MB) may cause performance issues depending on your device's available memory. For the best experience, standard-length songs (3–8 minutes) work perfectly.
+          </div>
+        </details>
+
+        <details class="bg-neonPanel backdrop-blur-md rounded-2xl border border-white/10 group">
+          <summary class="cursor-pointer p-5 font-bold text-white text-sm flex justify-between items-center hover:text-neonCyan transition">
+            What does the Reverb Decay slider do?
+            <svg class="w-4 h-4 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </summary>
+          <div class="px-5 pb-5 text-sm text-gray-400 leading-relaxed">
+            The Reverb Decay slider controls how much echo or "room" effect is added to the audio. At <strong class="text-white">0%</strong> you hear the dry (original) signal. Increasing it blends in a synthetic reverb that makes the track sound like it was recorded in a large hall. A subtle setting (10–25%) can add depth without muddying the mix.
+          </div>
+        </details>
+
+        <details class="bg-neonPanel backdrop-blur-md rounded-2xl border border-white/10 group">
+          <summary class="cursor-pointer p-5 font-bold text-white text-sm flex justify-between items-center hover:text-neonCyan transition">
+            Can I use my Nightcore remix commercially?
+            <svg class="w-4 h-4 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </summary>
+          <div class="px-5 pb-5 text-sm text-gray-400 leading-relaxed">
+            Nightcore Maker is a tool — you are responsible for the content you create. If you own the original audio or have the necessary licenses, you can use the output however you wish. If you are remixing copyrighted material, the resulting track is subject to the original rights holder's terms. Always make sure you have the proper permissions before distributing or monetizing any remix.
+          </div>
+        </details>
+
+      </div>
+    </article>
+
+  </section>
+
+  <footer class="relative z-10 w-full text-center py-4 text-xs text-gray-600 border-t border-gray-900 bg-cyberDark">
     <!-- Ad 1: En el footer arriba del copyright -->
     <div id="ad-container-footer" class="w-full flex justify-center items-center ad-wrapper overflow-hidden min-h-[90px]">
     </div>
@@ -179,7 +628,7 @@
 
   <!-- Modal para Políticas, Términos y Contacto -->
   <div id="info-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
-    <div class="bg-cyberCard border border-gray-700/50 rounded-2xl w-full max-w-xl p-6 md:p-8 shadow-[0_0_40px_rgba(0,0,0,0.6)] relative animate-fade-in-up">
+    <div class="bg-cyberDark border border-white/10 rounded-2xl w-full max-w-xl p-6 md:p-8 shadow-[0_0_40px_rgba(0,0,0,0.6)] relative animate-fade-in-up">
       <button id="close-modal" class="absolute top-4 right-4 text-gray-500 hover:text-white transition bg-gray-800 hover:bg-gray-700 rounded-full p-1">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>

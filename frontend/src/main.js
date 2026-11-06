@@ -33,16 +33,29 @@ class AudioProcessor {
     this.dryGainNode = this.audioContext.createGain();
     this.wetGainNode = this.audioContext.createGain();
 
+    this.analyserNode = this.audioContext.createAnalyser();
+    this.analyserNode.fftSize = 64;
+    this.analyserNode.smoothingTimeConstant = 0.8;
+
     this.gainNode.connect(this.bassFilter);
     this.bassFilter.connect(this.dryGainNode);
     this.dryGainNode.connect(this.audioContext.destination);
+    this.dryGainNode.connect(this.analyserNode);
 
     this.bassFilter.connect(this.convolverNode);
     this.convolverNode.connect(this.wetGainNode);
     this.wetGainNode.connect(this.audioContext.destination);
+    this.wetGainNode.connect(this.analyserNode);
 
     this.updateNodes();
     this.generateImpulseResponse(2.0, 2.0);
+  }
+
+  getFrequencyData() {
+    if (!this.analyserNode) return null;
+    const dataArray = new Uint8Array(this.analyserNode.frequencyBinCount);
+    this.analyserNode.getByteFrequencyData(dataArray);
+    return dataArray;
   }
 
   generateImpulseResponse(duration, decay) {
@@ -487,11 +500,21 @@ modal.addEventListener('click', (e) => {
 });
 
 // 2. LÓGICA DE LOS SLIDERS (Actualización de textos y motor de audio en tiempo real)
+function updateSliderTrack(slider) {
+  if (!slider) return;
+  const min = parseFloat(slider.min) || 0;
+  const max = parseFloat(slider.max) || 100;
+  const val = parseFloat(slider.value);
+  const percentage = Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
+  slider.style.setProperty('--value', `${percentage}%`);
+}
+
 sliderVolume.addEventListener('input', (e) => {
   const val = parseFloat(e.target.value);
   const pct = Math.round(val * 100);
   valVolume.textContent = `${pct}%`;
   audioProcessor.setVolume(val);
+  updateSliderTrack(sliderVolume);
 });
 
 sliderSpeed.addEventListener('input', (e) => {
@@ -500,6 +523,7 @@ sliderSpeed.addEventListener('input', (e) => {
   valSpeed.textContent = `${speed}x`;
   audioProcessor.setPlaybackRate(val);
   updateTimeDisplay();
+  updateSliderTrack(sliderSpeed);
 });
 
 sliderReverb.addEventListener('input', (e) => {
@@ -507,6 +531,7 @@ sliderReverb.addEventListener('input', (e) => {
   const pct = Math.round(val * 100);
   valReverb.textContent = `${pct}%`;
   audioProcessor.setReverbMix(val);
+  updateSliderTrack(sliderReverb);
 });
 
 // Este slider está deshabilitado por defecto para usuarios gratis
@@ -514,7 +539,102 @@ sliderBass.addEventListener('input', (e) => {
   const pct = Math.round((e.target.value / 10) * 100);
   valBass.textContent = `${pct}%`;
   audioProcessor.setBassBoost(parseFloat(e.target.value));
+  updateSliderTrack(sliderBass);
 });
+
+// Inicializar tracks de sliders
+[sliderVolume, sliderSpeed, sliderReverb, sliderBass].forEach(updateSliderTrack);
+
+// 2.5 VISUALIZADOR DE BARRAS EN TIEMPO REAL
+const visualizerContainer = document.getElementById('visualizer');
+const numVisBars = 16;
+const visBars = [];
+const visColors = ['#00f3ff', '#ff007f', '#8a2be2'];
+
+if (visualizerContainer) {
+  visualizerContainer.innerHTML = '';
+  for (let i = 0; i < numVisBars; i++) {
+    const bar = document.createElement('div');
+    const color = visColors[i % visColors.length];
+    bar.className = 'vis-bar';
+    bar.style.backgroundColor = color;
+    bar.style.boxShadow = `0 0 8px ${color}80`;
+    bar.style.height = '4px';
+    visualizerContainer.appendChild(bar);
+    visBars.push(bar);
+  }
+}
+
+function updateVisualizer() {
+  if (!visBars.length) return;
+  if (audioProcessor.isPlaying) {
+    const data = audioProcessor.getFrequencyData();
+    if (data && data.length) {
+      for (let i = 0; i < visBars.length; i++) {
+        const binIndex = Math.min(data.length - 1, Math.floor((i / visBars.length) * 20));
+        const val = data[binIndex] || 0;
+        const height = Math.max(4, Math.round((val / 255) * 44));
+        visBars[i].style.height = `${height}px`;
+      }
+    }
+  } else {
+    resetVisualizer();
+  }
+}
+
+function resetVisualizer() {
+  for (let i = 0; i < visBars.length; i++) {
+    visBars[i].style.height = '4px';
+  }
+}
+
+// Inicializar partículas flotantes con colores de fuego / neon incandescente
+const particleContainer = document.getElementById('particles-container');
+if (particleContainer) {
+  particleContainer.innerHTML = '';
+  const fireColors = ['#ff2200', '#ff4400', '#ff6600', '#ff8800', '#ffaa00', '#ffcc00', '#ff0055', '#ff3d00'];
+  const numParticles = 60;
+
+  for (let i = 0; i < numParticles; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 3.5 + 2; // 2px a 5.5px
+    p.style.width = `${size.toFixed(1)}px`;
+    p.style.height = `${size.toFixed(1)}px`;
+    p.style.left = `${(Math.random() * 100).toFixed(2)}vw`;
+    p.style.top = `${(Math.random() * 100 + 10).toFixed(2)}vh`;
+
+    const color = fireColors[Math.floor(Math.random() * fireColors.length)];
+    p.style.backgroundColor = color;
+    p.style.boxShadow = `0 0 ${size * 2}px ${color}, 0 0 ${size * 5}px ${color}, 0 0 ${size * 8}px rgba(255, 60, 0, 0.35)`;
+
+    const duration = Math.random() * 6 + 6; // 6s a 12s para suavidad
+    const delay = Math.random() * 8; // Inicio desfasado inmediato
+    p.style.animationDuration = `${duration.toFixed(1)}s`;
+    p.style.animationDelay = `-${delay.toFixed(1)}s`;
+
+    particleContainer.appendChild(p);
+  }
+}
+
+// 2.8 TOGGLE GLOWING BORDER EFFECT (FX: ON / OFF)
+const btnToggleGlow = document.getElementById('btn-toggle-glow');
+const centralPanel = document.getElementById('central-panel') || document.querySelector('.glass-panel');
+
+if (btnToggleGlow && centralPanel) {
+  btnToggleGlow.addEventListener('click', () => {
+    centralPanel.classList.toggle('disable-glow');
+    const isDisabled = centralPanel.classList.contains('disable-glow');
+    btnToggleGlow.textContent = isDisabled ? '✨ FX: OFF' : '✨ FX: ON';
+    if (isDisabled) {
+      btnToggleGlow.classList.remove('text-neonCyan', 'border-neonCyan/40');
+      btnToggleGlow.classList.add('text-gray-400', 'border-white/10');
+    } else {
+      btnToggleGlow.classList.remove('text-gray-400', 'border-white/10');
+      btnToggleGlow.classList.add('text-neonCyan', 'border-neonCyan/40');
+    }
+  });
+}
 
 
 // 3. LÓGICA DE SUBIDA DE ARCHIVOS (Click y Drag & Drop)
@@ -573,7 +693,7 @@ async function handleFileSelection(file) {
     
     // Reproducción automática
     audioProcessor.play();
-    btnPlay.innerHTML = '<svg class="w-6 h-6 fill-cyberDark" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'; // Icono Pausa
+    btnPlay.innerHTML = '<svg class="w-7 h-7 fill-white" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'; // Icono Pausa
     statusText.textContent = "Playing preview...";
     statusText.className = "text-center text-[11px] text-neonCyan italic mt-2";
     updateProgress();
@@ -596,12 +716,13 @@ btnPlay.addEventListener('click', () => {
 
   if (audioProcessor.isPlaying) {
     audioProcessor.pause();
-    btnPlay.innerHTML = '<svg class="w-6 h-6 fill-cyberDark" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'; // Icono Play
+    btnPlay.innerHTML = '<svg class="w-7 h-7 fill-white ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'; // Icono Play
     statusText.textContent = "Preview paused.";
     cancelAnimationFrame(animationFrameId);
+    resetVisualizer();
   } else {
     audioProcessor.play();
-    btnPlay.innerHTML = '<svg class="w-6 h-6 fill-cyberDark" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'; // Icono Pausa
+    btnPlay.innerHTML = '<svg class="w-7 h-7 fill-white" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'; // Icono Pausa
     statusText.textContent = "Playing preview...";
     updateProgress();
   }
@@ -609,11 +730,12 @@ btnPlay.addEventListener('click', () => {
 
 // Al terminar la pista naturalmente
 audioProcessor.onEndedCallback = () => {
-  btnPlay.innerHTML = '<svg class="w-6 h-6 fill-cyberDark" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'; // Icono Play
+  btnPlay.innerHTML = '<svg class="w-7 h-7 fill-white ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'; // Icono Play
   statusText.textContent = "Playback ended.";
   cancelAnimationFrame(animationFrameId);
   progressBar.style.width = '0%';
   updateTimeDisplay();
+  resetVisualizer();
 };
 
 function formatTime(seconds) {
@@ -633,6 +755,7 @@ function updateTimeDisplay() {
 
 function updateProgress() {
   updateTimeDisplay();
+  updateVisualizer();
   if (audioProcessor.isPlaying) {
     animationFrameId = requestAnimationFrame(updateProgress);
   }
@@ -644,7 +767,7 @@ progressBarContainer.addEventListener('click', (e) => {
   const rect = progressBarContainer.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const ratio = x / rect.width;
-  const targetTime = ratio * (audioProcessor.getDuration() / audioProcessor.playbackRate);
+  const targetTime = ratio * audioProcessor.getDuration();
   audioProcessor.seek(targetTime);
   updateTimeDisplay();
 });
